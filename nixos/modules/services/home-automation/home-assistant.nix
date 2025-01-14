@@ -317,11 +317,11 @@ in {
             };
 
             unit_system = mkOption {
-              type = types.nullOr (types.enum [ "metric" "imperial" ]);
+              type = types.nullOr (types.enum [ "metric" "imperial" "us_customary" ]);
               default = null;
               example = "metric";
               description = ''
-                The unit system to use. This also sets temperature_unit, Celsius for Metric and Fahrenheit for Imperial.
+                The unit system to use. This also sets temperature_unit, Celsius for Metric and Fahrenheit for US customary.
               '';
             };
 
@@ -510,6 +510,10 @@ in {
         assertion = cfg.openFirewall -> cfg.config != null;
         message = "openFirewall can only be used with a declarative config";
       }
+    ];
+
+    warnings = optionals (cfg.config.homeassistant.unit_system == "imperial") [
+      "Setting `services.home-assistant.config.homeassistant.unit_system` to 'imperial' is deprecated. Please use 'us_customary' instead."
     ];
 
     networking.firewall.allowedTCPPorts = mkIf cfg.openFirewall [ cfg.config.http.server_port ];
