@@ -173,13 +173,14 @@ sub pciCheck {
 
     # broadcom FullMac driver
     # list taken from
-    # https://wireless.wiki.kernel.org/en/users/Drivers/brcm80211#brcmfmac
+    # https://wireless.wiki.kernel.org/en/users/drivers/brcm80211#brcmfmac
     if ($vendor eq "0x14e4" &&
         ($device eq "0x43a3" || $device eq "0x43df" || $device eq "0x43ec" ||
          $device eq "0x43d3" || $device eq "0x43d9" || $device eq "0x43e9" ||
          $device eq "0x43ba" || $device eq "0x43bb" || $device eq "0x43bc" ||
          $device eq "0xaa52" || $device eq "0x43ca" || $device eq "0x43cb" ||
          $device eq "0x43cc" || $device eq "0x43c3" || $device eq "0x43c4" ||
+         $device eq "0x4329" || $device eq "0x4353" || $device eq "0x4357" ||
          $device eq "0x43c5"
         ) )
     {
