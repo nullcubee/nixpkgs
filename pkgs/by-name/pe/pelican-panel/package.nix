@@ -9,6 +9,7 @@
   yarnConfigHook,
   nix-update-script,
   dataDir ? "/var/lib/pelican-panel",
+  nixosTests,
 }:
 stdenvNoCC.mkDerivation (finalAttrs: {
   name = "${finalAttrs.pname}-${finalAttrs.version}";
@@ -91,6 +92,11 @@ stdenvNoCC.mkDerivation (finalAttrs: {
         "^v(.*-beta.*)$"
         "--version=unstable"
       ];
+    };
+    tests = {
+      inherit (nixosTests)
+        pelican-panel
+        ;
     };
   };
 
