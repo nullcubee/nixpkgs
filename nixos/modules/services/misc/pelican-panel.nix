@@ -23,6 +23,8 @@ let
     pipe
     mkDefault
     isString
+    replaceStrings
+    match
     ;
 
   autoConfig = {
@@ -30,7 +32,7 @@ let
     APP_ENV = "production";
     APP_INSTALLED = true;
     APP_ENVIRONMENT_ONLY = false;
-    APP_URL = "https://${cfg.domain}";
+    APP_URL = cfg.domain;
 
     DB_DATABASE = "panel";
     DB_USERNAME = "pelican";
@@ -120,8 +122,9 @@ in
     openFirewall = mkEnableOption "firewall rules for Pelican";
 
     domain = mkOption {
-      type = types.str;
+      type = with types; nullOr str;
       description = "the domain where the users access the panel. must be reachable from the wings nodes.";
+      example = "https://panel.example.com";
     };
 
     environment = mkOption {
@@ -149,6 +152,21 @@ in
   };
 
   config = mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = !(cfg.enableTraefik && cfg.domain == null);
+        message = "`services.pelican-panel.domain` cannot be null while `services.pelican-panel.enableTraefik` is enabled";
+      }
+      {
+        assertion =
+          !(
+            cfg.enableTraefik
+            && (if cfg.domain == null then false else (match "^.*(:[[:digit:]]+)$" cfg.domain) != null)
+          );
+        message = "services.pelican-panel.domain` cannot contain a port while `services.pelican-panel.enableTraefik` is enabled";
+      }
+    ];
+
     users = {
       users.pelican = {
         isSystemUser = true;
@@ -224,7 +242,7 @@ in
         http = {
           routers.pelican = {
             entryPoints = [ "websecure" ];
-            rule = "Host(`${cfg.domain}`)";
+            rule = "Host(`${replaceStrings [ "https://" "http://" ] [ "" "" ] cfg.domain}`)";
             service = "pelican";
             tls.certResolver = "letsencrypt";
           };
