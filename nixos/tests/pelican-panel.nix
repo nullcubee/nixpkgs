@@ -10,7 +10,6 @@
 
       services.pelican-panel = {
         enable = true;
-        domain = "panel.localhost";
         port = 8080;
         secretEnvironmentFile = pkgs.writeText "pelican-test-secrets.env" ''
           APP_KEY="base64:QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE="
@@ -33,7 +32,7 @@
 
     with subtest("login page is served by PHP-FPM"):
       machine.succeed(
-        "curl http://localhost:8080/auth/login | grep 'Pelican'"
+        "curl http://localhost:8080/login | grep 'Pelican'"
       )
   '';
 }
