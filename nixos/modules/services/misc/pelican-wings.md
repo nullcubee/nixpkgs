@@ -1,9 +1,9 @@
-# Wings {#module-pelican-wings}
+# Pelican Wings {#module-pelican-wings}
 
-Wings is the server backend for the Pelican Game server panel, responsible for running
-the actual game servers as Docker containers. To use the panel, Wings is required (and vice versa).
+Wings is the server backend for the Pelican Panel, responsible for running the actual game servers as Docker containers.
+The panel is required to use it (and vice versa). To set up the panel, see the docs for [](#module-pelican-panel)
 
-It is also required to set up SSL encryption for the Wings endpoint.
+If you use SSL for the panel, it is also required to set up SSL encryption for the Wings endpoint.
 This is possible directly using Wings itself, but a Reverse Proxy is recommended.
 
 See [upstream docs](https://pelican.dev/docs/wings/install).
@@ -13,11 +13,30 @@ See [upstream docs](https://pelican.dev/docs/wings/install).
 To set up a new node, go to <https://panel.your.domain/admin/nodes/create>. This will give you
 a YAML configuration file, which you only need the `uuid`, `token` and `token_id` attributes of.
 
-Then, configure them like in the traefik example below.
+```nix
+# configuration.nix
+{ pkgs, ... }:
+{
+  services.pelican-wings = {
+    enable = true;
+    openFirewall = true;
+
+    configuration.remote = "http://panel.example.com";
+    # Secrets saved like this will be world-readable in the store:
+    secretConfigurationFile = pkgs.writeText "wings-secret.yml" ''
+      uuid: my-node-uuid
+      token_id: supersecret
+      token: long-and-super-secret
+    '';
+  };
+}
+```
+
+The `secretConfigurationFile` option has to be set to the absolute path of a file that exists. Please use a [proper secret management scheme](https://wiki.nixos.org/wiki/Comparison_of_secret_managing_schemes) to provide it.
 
 ## Using traefik as a reverse proxy {#module-pelican-wings-traefik}
 
-The package has support for using traefik as a reverse proxy. See the docs for `services.traefik` on how to enable it.
+The module has support for using traefik as a reverse proxy. See the docs for `services.traefik` on how to enable it.
 For example, this could look like this:
 
 ```nix
@@ -29,17 +48,14 @@ For example, this could look like this:
 
     enableTraefik = true;
     openFirewall = true;
-    domain = "server1.your.domain";
+    domain = "server1.example.com";
 
-    # normally, you would use a secret manager like sops-nix,
-    # do not use this in production as your secrets will be
-    # world-readable in the store!
+    configuration.remote = "https://panel.example.com";
     secretConfigurationFile = pkgs.writeText "wings-secret.yml" ''
       uuid: my-node-uuid
       token_id: supersecret
       token: long-and-super-secret
     '';
-    configuration.remote = "https://panel.your.domain";
   };
 
   services.traefik = {
@@ -61,7 +77,7 @@ For example, this could look like this:
       };
 
       certificatesResolvers.letsencrypt.acme = {
-        email = "you@your.domain";
+        email = "alice@example.com";
         storage = "/var/lib/traefik/acme.json";
         tlsChallenge = { };
       };
