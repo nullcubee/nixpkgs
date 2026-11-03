@@ -1,7 +1,7 @@
 # Pelican Panel {#module-pelican-panel}
 
 [Pelican Panel](https://pelican.dev/) is a game server panel forked from [Pterodactyl](https://pterodactyl.io/) which manages Docker containers on multiple machines, using their control plane Wings.
-Wings is required to use it and vice versa. To set up Wings, see the docs for [](#opt-services.traefik.enable).
+Wings is required to use it and vice versa. To set up Wings, see the docs for [](#module-pelican-wings).
 
 Read the [official docs](https://pelican.dev/docs/panel/getting-started) before continuing.
 

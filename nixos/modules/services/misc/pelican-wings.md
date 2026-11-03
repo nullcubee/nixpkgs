@@ -1,7 +1,7 @@
 # Pelican Wings {#module-pelican-wings}
 
 Wings is the server backend for the Pelican Panel, responsible for running the actual game servers as Docker containers.
-The panel is required to use it (and vice versa). To set up the panel, see the docs for [](#module-pelican-panel)
+The panel is required to use it (and vice versa). To set up the panel, see the docs for [](#module-pelican-panel).
 
 If you use SSL for the panel, it is also required to set up SSL encryption for the Wings endpoint.
 This is possible directly using Wings itself, but a reverse proxy is recommended.
