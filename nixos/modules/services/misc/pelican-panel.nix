@@ -226,11 +226,6 @@ in
       caddy = {
         enable = mkDefault true;
 
-        globalConfig = mkDefault ''
-          auto_https off
-          admin off
-        '';
-
         virtualHosts =
           let
             domain = optionalString (!cfg.enableTraefik && cfg.domain != null) "${cfg.domain}";
