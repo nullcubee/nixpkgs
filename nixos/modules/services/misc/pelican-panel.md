@@ -43,10 +43,13 @@ This is so you can use any reverse proxy, even another webserver like nginx.
 All changes to `.env` will be stored in `/var/lib/pelican`, but it is recommended to configure everything through Nix where possible;
 make changes with [](#opt-services.pelican-panel.environment) or [](#opt-services.pelican-panel.secretEnvironmentFile).
 
-## Using traefik as a reverse proxy {#module-pelican-panel-traefik}
+## Examples {#module-pelican-panel-examples}
 
-The module has support for using traefik as a reverse proxy. See the docs for [](#opt-services.traefik.enable) on how to enable it.
-For example, a full configuration could look like this:
+::: {.example}
+
+# Using traefik as a reverse proxy {#module-pelican-panel-examples-traefik}
+
+See the docs for [](#opt-services.traefik.enable)
 
 ```nix
 # configuration.nix
@@ -63,7 +66,6 @@ For example, a full configuration could look like this:
     pelican-panel = {
       enable = true;
 
-      enableTraefik = true;
       domain = "https://panel.example.com";
 
       secretEnvironmentFile = pkgs.writeText "secrets.env" ''
@@ -73,6 +75,22 @@ For example, a full configuration could look like this:
 
     traefik = {
       enable = true;
+
+      dynamicConfigOptions = {
+        http = {
+          routers.pelican = {
+            entryPoints = [ "websecure" ];
+            rule = "Host(`panel.example.com`)";
+            service = "pelican";
+            tls.certResolver = "letsencrypt";
+          };
+
+          services.pelican.loadBalancer = {
+            passHostHeader = true;
+            servers = [ { url = "http://127.0.0.1:8081"; } ];
+          };
+        };
+      };
 
       staticConfigOptions = {
         entryPoints = {
@@ -102,3 +120,4 @@ For example, a full configuration could look like this:
 }
 ```
 
+:::

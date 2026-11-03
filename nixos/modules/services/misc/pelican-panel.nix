@@ -17,14 +17,11 @@ let
     types
     maintainers
     generators
-    optional
     mkIf
-    optionalAttrs
     optionalString
     pipe
     mkDefault
     isString
-    replaceStrings
     match
     ;
 
@@ -52,9 +49,6 @@ let
     SESSION_DRIVER = "redis";
 
     MAIL_DRIVER = "log";
-  }
-  // optionalAttrs cfg.enableTraefik {
-    TRUSTED_PROXIES = "127.0.0.1";
   };
 
   mergedConfig = autoConfig // cfg.environment;
@@ -119,11 +113,16 @@ in
 {
   options.services.pelican-panel = {
     enable = mkEnableOption "Pelican Panel";
-    enableTraefik = mkEnableOption "Traefik reverse proxy configuration for Pelican";
 
     package = mkPackageOption pkgs "pelican-panel" { };
 
     openFirewall = mkEnableOption "firewall rules for Pelican";
+
+    port = mkOption {
+      type = types.port;
+      default = 8081;
+      description = "The port Pelican Panel is served on";
+    };
 
     domain = mkOption {
       type = with types; nullOr str;
@@ -147,21 +146,10 @@ in
       type = types.path;
       description = "Path to a .env file containing secret configuration values. Merged before configuration at runtime so its values take precedence.";
     };
-
-    port = mkOption {
-      type = types.port;
-      default = 8081;
-      description = "The port caddy listens on";
-    };
   };
 
   config = mkIf cfg.enable {
     assertions = [
-      {
-        assertion =
-          !(cfg.enableTraefik && (cfg.domain == null || match "^.*(:[[:digit:]]+)$" cfg.domain != null));
-        message = "`services.pelican-panel.domain` cannot be null or contain a port while `services.pelican-panel.enableTraefik` is enabled";
-      }
       {
         assertion = (cfg.domain == null || match "https?://.*" cfg.domain != null);
         message = "`services.pelican-panel.domain` must be `null` or a valid URL";
@@ -228,7 +216,7 @@ in
 
         virtualHosts =
           let
-            domain = optionalString (!cfg.enableTraefik && cfg.domain != null) "${cfg.domain}";
+            domain = optionalString (cfg.domain != null) "${cfg.domain}";
           in
           {
             "${domain}:${toString cfg.port}".extraConfig = ''
@@ -238,22 +226,6 @@ in
               php_fastcgi unix//run/phpfpm/pelican.sock
             '';
           };
-      };
-
-      traefik.dynamicConfigOptions = mkIf cfg.enableTraefik {
-        http = {
-          routers.pelican = {
-            entryPoints = [ "websecure" ];
-            rule = "Host(`${replaceStrings [ "https://" "http://" ] [ "" "" ] cfg.domain}`)";
-            service = "pelican";
-            tls.certResolver = "letsencrypt";
-          };
-
-          services.pelican.loadBalancer = {
-            passHostHeader = true;
-            servers = [ { url = "http://127.0.0.1:${toString cfg.port}"; } ];
-          };
-        };
       };
     };
 
@@ -333,7 +305,7 @@ in
     };
 
     networking.firewall = mkIf cfg.openFirewall {
-      allowedTCPPorts = optional (!cfg.enableTraefik) cfg.port;
+      allowedTCPPorts = cfg.port;
     };
 
     environment.systemPackages = [ artisan ];
