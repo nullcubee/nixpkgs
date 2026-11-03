@@ -10,6 +10,8 @@ let
   inherit (cfg) package;
   inherit (package.passthru) php;
 
+  webserver = config.services.${cfg.webserver};
+
   inherit (lib)
     mkOption
     mkEnableOption
@@ -20,9 +22,9 @@ let
     mkIf
     optionalString
     pipe
-    mkDefault
     isString
     match
+    optionals
     ;
 
   artisan = pkgs.writeShellScriptBin "pelican-artisan" ''
@@ -130,6 +132,18 @@ in
       example = "https://panel.example.com";
     };
 
+    webserver = mkOption {
+      type = types.enum [
+        "none"
+        "caddy"
+      ];
+      default = "caddy";
+      example = "none";
+      description = ''
+        The webserver that serves Pelican Panel. Set to `none` to configure it yourself.
+      '';
+    };
+
     environment = mkOption {
       type = types.attrsOf (
         types.oneOf [
@@ -189,8 +203,8 @@ in
         group = "pelican";
 
         settings = {
-          "listen.owner" = mkDefault config.services.caddy.user;
-          "listen.group" = mkDefault config.services.caddy.group;
+          "listen.owner" = mkIf (cfg.webserver != "none") webserver.user;
+          "listen.group" = mkIf (cfg.webserver != "none") webserver.group;
           "pm" = "dynamic";
           "pm.max_children" = 10;
           "pm.start_servers" = 2;
@@ -211,8 +225,8 @@ in
         };
       };
 
-      caddy = {
-        enable = mkDefault true;
+      caddy = mkIf (cfg.webserver == "caddy") {
+        enable = true;
 
         virtualHosts =
           let
@@ -236,7 +250,7 @@ in
           requires = [ "pelican-setup.service" ];
         };
 
-        caddy = {
+        caddy = mkIf (cfg.webserver == "caddy") {
           after = [ "pelican-setup.service" ];
           requires = [ "pelican-setup.service" ];
         };
@@ -254,8 +268,10 @@ in
           ];
           before = [
             "phpfpm-pelican.service"
-            "caddy.service"
             "pelican-queue.service"
+          ]
+          ++ optionals (cfg.webserver == "caddy") [
+            "caddy.service"
           ];
 
           serviceConfig = {
