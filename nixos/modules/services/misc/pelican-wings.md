@@ -34,10 +34,13 @@ a YAML configuration file, which you only need the `uuid`, `token` and `token_id
 
 The `secretConfigurationFile` option has to be set to the absolute path of a file that exists. Please use a [proper secret management scheme](https://wiki.nixos.org/wiki/Comparison_of_secret_managing_schemes) to provide it.
 
-## Using traefik as a reverse proxy {#module-pelican-wings-traefik}
+## Examples {#module-pelican-wings-examples}
 
-The module has support for using traefik as a reverse proxy. See the docs for [](#opt-services.traefik.enable).
-For example, this could look like this:
+::: {.example}
+
+# Using traefik as a reverse proxy {#module-pelican-wings-examples-traefik}
+
+See the docs for [](#opt-services.traefik.enable).
 
 ```nix
 # configuration.nix
@@ -46,11 +49,16 @@ For example, this could look like this:
   services.pelican-wings = {
     enable = true;
 
-    enableTraefik = true;
     openFirewall = true;
     domain = "server1.example.com";
 
-    configuration.remote = "https://panel.example.com";
+    configuration = {
+      remote = "https://panel.example.com";
+      api = {
+        host = "0.0.0.0";
+        ssl.enabled = false;
+      };
+    };
     secretConfigurationFile = pkgs.writeText "wings-secret.yml" ''
       uuid: my-node-uuid
       token_id: supersecret
@@ -60,6 +68,22 @@ For example, this could look like this:
 
   services.traefik = {
     enable = true;
+
+    dynamicConfigOptions = {
+      http = {
+        routers.wings = {
+          entryPoints = [ "websecure" ];
+          rule = "Host(`server1.example.com`)";
+          service = "wings";
+          tls.certResolver = "letsencrypt";
+        };
+
+        services.wings.loadBalancer = {
+          passHostHeader = true;
+          servers = [ { url = "http://127.0.0.1:8080"; } ];
+        };
+      };
+    };
 
     staticConfigOptions = {
       entryPoints = {
@@ -97,3 +121,4 @@ For example, this could look like this:
 }
 ```
 
+:::

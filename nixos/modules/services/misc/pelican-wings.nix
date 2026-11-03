@@ -13,7 +13,6 @@ let
     types
     mkIf
     mkDefault
-    optionalAttrs
     recursiveUpdate
     maintainers
     getExe
@@ -22,11 +21,17 @@ in
 {
   options.services.pelican-wings = {
     enable = mkEnableOption "Pelican Wings daemon";
-    enableTraefik = mkEnableOption "Traefik reverse proxy configuration for Wings";
 
     package = mkPackageOption pkgs "pelican-wings" { };
 
     openFirewall = mkEnableOption "firewall rules for Wings. Will open both the SFTP port 2022 and the apiPort. Disable if you're using a reverse proxy and open 2022 manually";
+
+    apiPort = mkOption {
+      type = types.port;
+      default = 8080;
+      description = "Port Wings listens on.";
+    };
+
     domain = mkOption {
       type = types.str;
       description = "the domain to run Wings on. Must be reachable from the panel and from all clients accessing the panel";
@@ -42,12 +47,6 @@ in
       type = types.path;
       description = "Path to a YAML file containing secret configuration values. Merged on top of configuration at runtime.";
     };
-
-    apiPort = mkOption {
-      type = types.port;
-      default = 8080;
-      description = "Port Wings listens on.";
-    };
   };
 
   config = mkIf cfg.enable {
@@ -56,20 +55,10 @@ in
     systemd = {
       services.pelican-wings =
         let
-          autoConfig =
-            recursiveUpdate
-              {
-                system.sftp.bind_port = 2022;
-                api.port = cfg.apiPort;
-              }
-              (
-                optionalAttrs cfg.enableTraefik {
-                  api = {
-                    host = "0.0.0.0";
-                    ssl.enabled = false;
-                  };
-                }
-              );
+          autoConfig = {
+            system.sftp.bind_port = 2022;
+            api.port = cfg.apiPort;
+          };
           storeConfig = (pkgs.formats.yaml { }).generate "wings-config.yml" (
             recursiveUpdate autoConfig cfg.configuration
           );
@@ -108,22 +97,6 @@ in
         "/var/lib/pelican".d = { };
         "/var/log/pelican/install".d = { };
         "/tmp/pelican".d = { };
-      };
-    };
-
-    services.traefik.dynamicConfigOptions = mkIf cfg.enableTraefik {
-      http = {
-        routers.wings = {
-          entryPoints = [ "websecure" ];
-          rule = "Host(`${cfg.domain}`)";
-          service = "wings";
-          tls.certResolver = "letsencrypt";
-        };
-
-        services.wings.loadBalancer = {
-          passHostHeader = true;
-          servers = [ { url = "http://127.0.0.1:${toString cfg.apiPort}"; } ];
-        };
       };
     };
 

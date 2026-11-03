@@ -2,6 +2,9 @@
   "module-pelican-panel-examples": [
     "index.html#module-pelican-panel-examples"
   ],
+  "module-pelican-wings-examples": [
+    "index.html#module-pelican-wings-examples"
+  ],
   "module-services-netbird-relay": [
     "index.html#module-services-netbird-relay"
   ],
@@ -999,8 +1002,8 @@
   "module-pelican-wings-setup": [
     "index.html#module-pelican-wings-setup"
   ],
-  "module-pelican-wings-traefik": [
-    "index.html#module-pelican-wings-traefik"
+  "module-pelican-wings-examples-traefik": [
+    "index.html#module-pelican-wings-examples-traefik"
   ],
   "module-pelican-panel": [
     "index.html#module-pelican-panel"
